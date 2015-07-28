@@ -36,3 +36,4 @@ results['Total Flux'] = Column(Float1d(flux_totals))
 results['Median Flux'] = Column(Float1d(flux_medians))
 results['99th Percentile Signal'] = Column(Float1d(signal_99s))
     
+asciiTableWriter(table=results, file='/Users/Tom/results.txt')
