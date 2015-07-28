@@ -3,11 +3,23 @@ import datetime
 # Settings
 poolHsa = 'SPITZER_M74'
 poolPath = '/Users/Tom/HIPE/pool'
-spitzer24Src = '/Users/Tom/Projects/spire-hires-calibration/fits/herschel/m74.fits'
-outDir     = "/Users/Tom/HIPE/plots/"
-obsid = 1342189427
-#bands = ['PMW']#, 'PSW']
-bands = ['PLW']
+outDirBase = "/Users/Tom/HIPE/plots/"
+
+# M74
+#spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/m74.fits'
+#obsid = 1342189427
+
+# NGC 4151
+obsid = 1342188588
+spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/ngc4151.fits'
+
+# M81
+#obsid = 1342185538
+#spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/m81.fits'
+
+
+outDir = outDirBase + str(obsid) + '/'
+bands = ['PLW', 'PMW', 'PSW']
 
 # Get the observation from the archive if not already stored in the pool locally
 def loadObservation(obsid):
@@ -39,6 +51,7 @@ def loadBeams():
     fullBeams = {}
     for band in bands:
         fullBeams[band] = obsIn.calibration.getPhot().getProduct('BeamProfList').getProduct(band, 'fine')
+        simpleFitsWriter(fullBeams[band], outDirBase + 'BEAM_' + band + '.fits')
     return fullBeams
 
 truthImages = {}
@@ -95,7 +108,7 @@ def generateTruthImages():
         
         spitzerConvolvedImages[band] = convolvedSpitzer
         truthImages[band] = truthSpitzer
-        return spitzerConvolvedImages, truthImages
+    return spitzerConvolvedImages, truthImages
    
 def generateSpitzerObservations():
     newScans = {}
@@ -165,67 +178,61 @@ spitzer = loadSpitzer()
 fullBeams = loadBeams()
 
 # Generate Truth Images
-generateTruthImages()
+print 'Generating Truth Images ...'
+spitzerConvolvedImages, truthImages  = generateTruthImages()
 
 # Create fake observaitons
+print 'Creating Fake Observation Data ...'
 newScans = generateSpitzerObservations()
 
-# Generate HIRES maps using different beams
-beamSizes = [25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125, 150, 200, 250]
-runtime = []
-#beams = {}
-
-hiresSample = {}
-for size in beamSizes:
-    t1 = datetime.datetime.now()
+def simulationBeamSizes():
+    # Generate HIRES maps using different beams
+    beamSizes = {
+        'PLW' : [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125, 150, 200],
+        'PMW' : [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125],
+        'PSW' : [5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 75, 100],
+    }
+    
+    runtime = []
+    #beams = {}
+    
+    print 'Generating HiRes Images ..'
+    hiresSample = {}
     for band in bands:
-        bcenter = fullBeams[band].image.dimensions
-        bcenter[0] = bcenter[0] / 2
-        bcenter[1] = bcenter[1] / 2
-        beam = crop(fullBeams[band], int(bcenter[0] - size) , int(bcenter[1] - size), int(bcenter[0] + size+1), int(bcenter[1] + size+1))
-        #beams[band + str(size)] = beam
-        
-        level2 = obsIn.level2
-        wcs = level2.getProduct('extd%s'%band).wcs
-        mapMax = MAX(level2.getProduct('psrc%s'%band).image[\
-            level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
-        mapMin = MIN(level2.getProduct('psrc%s'%band).image[\
-            level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
-        tempMap = processHiRes(newScans[band], band, beam, wcs, mapMin, mapMax)
-        simpleFitsWriter(tempMap, outDir + 'HIRES_' + band +'_BEAMHSIZE_' + str(size) + '.fits')
-        hiresSample[band] = tempMap
-    t2 = datetime.datetime.now()
-    runtime.append( (t2-t1).seconds )
+        for size in beamSizes[band]:
+            t1 = datetime.datetime.now()
+            bcenter = fullBeams[band].image.dimensions
+            bcenter[0] = bcenter[0] / 2
+            bcenter[1] = bcenter[1] / 2
+            beam = crop(fullBeams[band], int(bcenter[0] - size) , int(bcenter[1] - size), int(bcenter[0] + size+1), int(bcenter[1] + size+1))
+            #beams[band + str(size)] = beam
+            
+            level2 = obsIn.level2
+            wcs = level2.getProduct('extd%s'%band).wcs
+            mapMax = MAX(level2.getProduct('psrc%s'%band).image[\
+                level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
+            mapMin = MIN(level2.getProduct('psrc%s'%band).image[\
+                level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
+            tempMap = processHiRes(newScans[band], band, beam, wcs, mapMin, mapMax)
+            simpleFitsWriter(tempMap, outDir + 'HIRES_' + band +'_BEAMHSIZE_' + str(size) + '.fits')
+            hiresSample[band] = tempMap
+            t2 = datetime.datetime.now()
+            runtime.append( (t2-t1).seconds )
+            
+def number_iterations():
+    pass
+
+simulationBeamSize()
 
 # Save out Truth images
 for band in bands:
     truthImages[band] = regrid(source=truthImages[band], target=hiresSample[band])
-    simpleFitsWriter(truthImages[band], outDir + 'TRUTH_m74_' + band + '.fits')
-
-# cleanup
-del(band)
-#del(im)
-#del(convolvedSpitzer)
-#del(truthSpitzer)
-del(spitzer24Src)
-del(size)
-del(poolPath)
-del(poolHsa)
-#del(nwcs)
-#del(twcs)
-#del(nbeam)
-del(outDir)
-#del(tbeam)
-#del(tim)
-del(bcenter)
-del(beam)
-del(wcs)
-del(tempMap)
-del(level2)
-del(mapMax)
-del(mapMin)
-del(t1)
-del(t2)
-        
-        
+    simpleFitsWriter(truthImages[band], outDir + 'TRUTH_' + band + '.fits')
+    
+for band in bands:
+    wcs = obsIn.level2.getProduct("psrc"+band).wcs.copy()
+    newmap = naiveScanMapper(newScans[band], array=band, wcs=wcs)
+    newmap = regrid(source=newmap, target=hiresSample[band])
+    simpleFitsWriter(newmap, outDir + 'ORIGINAL_' + band + '.fits')
+    
   
