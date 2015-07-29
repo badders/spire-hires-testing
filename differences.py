@@ -11,17 +11,17 @@ fits_dir_base = "/Users/Tom/HIPE/plots/"
 obsids = [1342189427, 1342188588, 1342185538]
 
 beams = {
-    'PLW' : [0, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125, 150, 200],
-    'PMW' : [0, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125],
-    'PSW' : [0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 75, 100],
+    'PLW' : [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125, 150, 200],
+    'PMW' : [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 125],
+    'PSW' : [5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 75, 100],
 }
 
 bands = ['PLW', 'PMW', 'PSW']
 
 weight_r = {
-    'PLW' : 8,
-    'PMW' : 6,
-    'PSW' : 4
+    'PLW' : 12,
+    'PMW' : 8,
+    'PSW' : 6
 }
 
 minima_locs = {
@@ -43,15 +43,25 @@ def diffs_for_obs(obsid):
         truth_image = nan_to_num(truth_image)
         truth_peak = truth_image.max()
 
+        weight_image = truth_image.copy()
+
         # Gernerate a weighting based on proximity to bright pixels
         # Create a disc as filter
         r = weight_r[band]
         y,x = np.ogrid[-r: r+1, -r: r+1]
         mask = x**2+y**2 <= r**2
 
-        weight_image = convolve(truth_image.copy(), mask)
-        print('MAX: {}'.format(weight_image.max()))
-        weight_image = nan_to_num(weight_image) / weight_image.max()
+        weight_image = convolve(truth_image, mask)
+        weight_image[weight_image > 1] = 1
+        weight_image[weight_image < 0] = 0
+
+        weight_image = nan_to_num(weight_image)
+
+        # imshow(weight_image)
+        # show()
+        # return
+
+        #weight_image = nan_to_num(weight_image) / weight_image.max()
 
         if band == 'PLW':
             subplot('131')
@@ -78,13 +88,19 @@ def diffs_for_obs(obsid):
             hires_image[isnan(truth_image_temp)] = nan
             truth_image_temp[isnan(hires_image)] = nan
 
+            weight_image_temp = weight_image.copy()
+            weight_image_temp[isnan(hires_image)] = nan
+
             # Normalise image to have same total flux as truth image
-            hires_image *= (nansum(truth_image) / nansum(hires_image))
+            flux_correction_factor = (nansum(truth_image_temp) / nansum(hires_image))
+            print(flux_correction_factor)
+            hires_image *= flux_correction_factor
 
             # Take differences and weight based on brightness in truth
             im_diff = (truth_image - hires_image) * weight_image
             hires_diff_maps.append(im_diff)
-            hires_differences.append(sqrt(nanfilter(truth_image - hires_image)**2).sum() / len(nanfilter(truth_image_temp)))
+            #hires_differences.append(sqrt(nanfilter(truth_image - hires_image)**2).sum() / len(nanfilter(truth_image_temp)))
+            hires_differences.append(sqrt(nanfilter(truth_image - hires_image)**2).sum() / nansum(weight_image))
 
         render(beams[band], hires_differences, label=band)
         gca().yaxis.set_major_formatter(y_format)
