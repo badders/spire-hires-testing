@@ -47,11 +47,41 @@ def loadSpitzer():
     sim *= pix_size
     return spitzer
 
-def loadBeams():
+def loadBeams(radialised=False):
     fullBeams = {}
     for band in bands:
+        
         fullBeams[band] = obsIn.calibration.getPhot().getProduct('BeamProfList').getProduct(band, 'fine')
-        simpleFitsWriter(fullBeams[band], outDirBase + 'BEAM_' + band + '.fits')
+        
+        if radialised:
+            radial_profile = obsIn.refs["calibration"].product.refs["Phot"].product.refs["RadialCorrBeam"].product["core"][band].data
+            width = 2 * len(radial_profile) - 1
+            beam = Double2d(width, width, Double.NaN)
+            cx = cy = len(radial_profile) - 1
+            
+            for x in range(0, width):
+                for y in range(0, width):
+                    r = SQRT((x - cx)**2 + (y - cy)**2)
+                    if r <= len(radial_profile)-1:
+                        r1 = int(FLOOR(r))
+                        r2 = int(CEIL(r))
+                        val1 = radial_profile[r1]
+                        val2 = radial_profile[r2]
+                        # Linearly interpolate the radial profile - might want to bicubic this
+                        if r2 == r1:
+                            beam[x, y] = val1
+                        else:        
+                            beam[x, y] = val1 + (val2 - val1) * (r - r1) / (r2 - r1)
+            fullBeams[band].image = beam
+            fullBeams[band].wcs.naxis1 = width
+            fullBeams[band].wcs.naxis2 = width
+            fullBeams[band].wcs.crpix1 = cx
+            fullBeams[band].wcs.crpix2 = cy
+                    
+        if radialised:
+            simpleFitsWriter(fullBeams[band], outDirBase + 'RADIAL_BEAM_' + band + '.fits')
+        else:
+            simpleFitsWriter(fullBeams[band], outDirBase + 'BEAM_' + band + '.fits')
     return fullBeams
 
 truthImages = {}
