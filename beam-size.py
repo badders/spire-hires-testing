@@ -4,6 +4,7 @@ import datetime
 poolHsa = 'SPITZER_M74'
 poolPath = '/Users/Tom/HIPE/pool'
 outDirBase = "/Users/Tom/HIPE/plots/"
+radialised=False
 
 # M74
 #spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/m74.fits'
@@ -47,7 +48,7 @@ def loadSpitzer():
     sim *= pix_size
     return spitzer
 
-def loadBeams(radialised=False):
+def loadBeams():
     fullBeams = {}
     for band in bands:
         

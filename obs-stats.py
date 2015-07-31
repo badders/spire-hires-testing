@@ -30,24 +30,27 @@ for band in bands:
         threshold_results[t] = []
     
     for id in x:
-        obsIn = getObservation(obsid=id, useHsa=True, instrument='SPIRE')
-        l2_image = obsIn.level2.getProduct('extd%s' % band).image
-        flux_total = sum(l2_image[l2_image.where(IS_FINITE(l2_image))])
-        
-        d = SORT(RESHAPE(l2_image))
-        d = d[d.where(IS_FINITE(d))]
-        assert(len(d) > 100)
-        k = int(CEIL(len(d) * .99))
-        signal_99 = d[k]
-        
-        flux_median = MEDIAN(NAN_FILTER(d))
-        
-        flux_totals.append(flux_total)
-        flux_medians.append(flux_median)
-        signal_99s.append(signal_99)
-        
-        for t in thresholds:
-            threshold_results[t].append((d.where(d>t)).length())
+        try:
+            obsIn = getObservation(obsid=id, useHsa=True, instrument='SPIRE')
+            l2_image = obsIn.level2.getProduct('extd%s' % band).image
+            flux_total = sum(l2_image[l2_image.where(IS_FINITE(l2_image))])
+            
+            d = SORT(RESHAPE(l2_image))
+            d = d[d.where(IS_FINITE(d))]
+            assert(len(d) > 100)
+            k = int(CEIL(len(d) * .99))
+            signal_99 = d[k]
+            
+            flux_median = MEDIAN(NAN_FILTER(d))
+            
+            flux_totals.append(flux_total)
+            flux_medians.append(flux_median)
+            signal_99s.append(signal_99)
+            
+            for t in thresholds:
+                threshold_results[t].append((d.where(d>t)).length())
+        except:
+            pass
         
     results = TableDataset(description='Observation Analysis')
     results['Observation ID'] = Column(x)
