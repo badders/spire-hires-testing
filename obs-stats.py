@@ -9,7 +9,13 @@ obs_ids = data[0].getData()
 x = obs_ids[data_range[0]:data_range[1]]
 bands = ['PLW', 'PMW', 'PSW']
 
-thresholds = [1, 10, 20, 50, 100, 300, 500, 1000]
+thresholds = [10, 20, 30, 40, 50, 100, 300]
+
+test_thresholds = {
+	'PLW' : 100,
+	'PMW' : 300,
+	'PSW' : 400
+}
 
 results_tables = {}
 
@@ -53,4 +59,17 @@ for band in bands:
         results['Pixels > %d' % t] = Column(Float1d(threshold_results[t]))
         
     results_tables[band] = results
-    asciiTableWriter(table=results, file='/home/ug/c1145457/results-%s.txt' % band)
+    asciiTableWriter(table=results, file='/home/ug/c1145457/results-%s.csv' % band)
+    
+# Check for pass/fails on each set of data
+pfres = TableDataset(description='Threshold Checking')
+pfres['Observation ID'] = Column(x)
+pass_res_tot = Int1d(len(x))
+for band in bands:
+    col = results_tables[band]['Pixels > 20']
+    pass_res = Int1d(len(col.data))
+    pass_res[col.data.where(col.data >= test_thresholds[band])] = 1
+    pass_res_tot += pass_res
+    pfres['%s Pix> 20' % band] = Column(pass_res)
+pfres['Total Pass'] = Column(pass_res_tot)
+asciiTableWriter(table=pfres, file='/home/ug/c1145457/hires_check.csv' % band)
