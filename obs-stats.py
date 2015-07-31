@@ -1,4 +1,4 @@
-datafile = '/home/ug/c1145457/spire-hires-testing/obs.csv'
+datafile = '/home/ug/c1145457/spire-hires-testing/obsids_allSPIRE.csv'
 
 data = asciiTableReader(file=datafile, columnNames=True, tableType='ADVANCED', columnType=AsciiParser.GUESS_ALL)
 
@@ -6,7 +6,7 @@ data_range = (0, 78)
 
 obs_ids = data[0].getData()
 
-x = obs_ids[data_range[0]:data_range[1]]
+x = obs_ids #[data_range[0]:data_range[1]]
 bands = ['PLW', 'PMW', 'PSW']
 
 thresholds = [10, 20, 30, 40, 50, 100, 300]
@@ -66,10 +66,14 @@ pfres = TableDataset(description='Threshold Checking')
 pfres['Observation ID'] = Column(x)
 pass_res_tot = Int1d(len(x))
 for band in bands:
+    snr_col = results_tables[band]['99th Percentile Signal']
+    pfres['%s 99S' % band] = snr_col
     col = results_tables[band]['Pixels > 20']
     pass_res = Int1d(len(col.data))
     pass_res[col.data.where(col.data >= test_thresholds[band])] = 1
     pass_res_tot += pass_res
-    pfres['%s Pix> 20' % band] = Column(pass_res)
+    pfres['%s Pix > 20' % band] = col
+    pfres['%s PASS' % band] = Column(pass_res)
+    
 pfres['Total Pass'] = Column(pass_res_tot)
-asciiTableWriter(table=pfres, file='/home/ug/c1145457/hires_check.csv' % band)
+asciiTableWriter(table=pfres, file='/home/ug/c1145457/hires_check.csv')
