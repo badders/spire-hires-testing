@@ -2,7 +2,7 @@
 outDir = "/Users/Tom/HIPE/plots/SPIRE/"
 
 # M74, NGC4151, M81
-obsids = [1342189427, 1342188588, 1342185538]
+obsids = [1342189427, 1342188588, 1342185538, 1342249237]
 bands = ['PLW', 'PMW', 'PSW']
 
 beamSizes = {
@@ -12,12 +12,12 @@ beamSizes = {
 }
 
 ########## DEBUG #############################
-obsids = [1342249237]
-bands = ['PLW']
-
-beamSizes = {
-    'PLW' : [50]
-}
+#obsids = [1342249237]
+#bands = ['PLW']
+#
+#beamSizes = {
+#    'PLW' : [50]
+#}
 ##############################################
 
 
@@ -35,7 +35,7 @@ def loadBeams(obsIn):
         fullBeams[band] = obsIn.calibration.getPhot().getProduct('BeamProfList').getProduct(band, 'fine')
     return fullBeams
 
-def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax):
+def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax, fluxOffsets):
     level1 = Level1Context()
     selectRefs = filter(lambda x:x.meta['bbid'].value>>16==0xa103, inLevel1.refs)
     for ref in selectRefs: 
@@ -48,7 +48,7 @@ def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax):
     map(lambda x: wcs.meta[x].setValue(keyMap[x[:-1]][0](wcs.meta[x].value*keyMap[x[:-1]][1])) , \
         map(lambda x:keyMap.keys()[x/2]+str(x%2+1), range(2*len(keyMap.keys()))))
 
-    hiresImage, hiresBeam = hiresMapper(level1, array = inArray, beam=inBeam, wcs=wcs)
+    hiresImage, hiresBeam = hiresMapper(level1, array = inArray, beam=inBeam, wcs=wcs, fluxOffset=fluxOffsets)
     tempIndx = hiresImage.image.where((hiresImage.image>2*inMapMax).or(hiresImage.coverage<1e-10))
     hiresImage.image[tempIndx] = Double.NaN
     return hiresImage
@@ -59,7 +59,9 @@ for obsid in obsids:
     # Save out nominal maps
     for band in bands:
         nominal = obs.level2.getProduct("psrc"+band)
-        simpleFitsWriter(nominal, outDir + 'NOMINAL_%d.fits' % obsid)
+        beamAreaPipArc = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sArc'%band.capitalize()].value
+        nominalNew = convertImageUnit(image=nominal,beamArea= beamAreaPipArc,newUnit='MJy/sr')
+        simpleFitsWriter(nominalNew, outDir + '%d_NOMINAL_%s.fits' % (obsid, band))
 
     # Generate HiRes maps for each observation at all the beam sizes
     fullBeams = loadBeams(obs)
@@ -79,5 +81,21 @@ for obsid in obsids:
                 level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
             mapMin = MIN(level2.getProduct('psrc%s'%band).image[\
                 level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
-            tempMap = processHiRes(level1, band, beam, wcs, mapMin, mapMax)
-            simpleFitsWriter(tempMap, outDir + str(obsid) + '_HIRES_' + band +'_BEAMHSIZE_' + str(beamSize) + '.fits')
+            
+            # Get flux offsets
+            fluxOffsetsExtd = level2.getProduct('extd%s'%band).meta['zPointOffset'].value
+            beamAreaPipSr = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sSr'%band.capitalize()].value
+            fluxOffsetsPsrc = fluxOffsetsExtd * 1.e6 * beamAreaPipSr
+            # Run hires with flux offsets
+            tempMap = processHiRes(level1, band, beam, wcs, mapMin, mapMax, fluxOffsetsPsrc)
+            # Remove flux offset 
+            mapHiresPsrcNew = imageSubtract( image1=tempMap, scalar=fluxOffsetsPsrc)
+            # Convert units to MJy/sr
+            beamAreaPipArc = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sArc'%band.capitalize()].value
+            mapHiresExtdNew = convertImageUnit(image=mapHiresPsrcNew,beamArea= beamAreaPipArc,newUnit='MJy/sr')
+            k4P = obs.calibration.getPhot().getProduct('FluxConvList')[0].meta['k4P_%s'%band].value
+            k4E = obs.calibration.getPhot().getProduct('FluxConvList')[0].meta['k4E_%s'%band].value
+            mapHiresExtdNew = imageDivide(image1=mapHiresExtdNew,scalar=k4P)
+            mapHiresExtdNew = imageMultiply(image1=mapHiresExtdNew,scalar=k4E)
+            mapHiresExtdNew = imageAdd(image1=mapHiresExtdNew,scalar=fluxOffsetsExtd)
+            simpleFitsWriter(mapHiresExtdNew, outDir + str(obsid) + '_HIRES_' + band +'_BEAMHSIZE_' + str(beamSize) + '.fits')
