@@ -2,11 +2,9 @@ datafile = '/home/ug/c1145457/spire-hires-testing/obsids_allSPIRE.csv'
 
 data = asciiTableReader(file=datafile, columnNames=True, tableType='ADVANCED', columnType=AsciiParser.GUESS_ALL)
 
-data_range = (0, 78)
-
 obs_ids = data[0].getData()
 
-x = obs_ids #[data_range[0]:data_range[1]]
+x = obs_ids 
 bands = ['PLW', 'PMW', 'PSW']
 
 thresholds = [10, 20, 30, 40, 50, 100, 300]
@@ -29,7 +27,10 @@ for band in bands:
     for t in thresholds:
         threshold_results[t] = []
     
-    for id in x:
+    for i, id in enumerate(x):
+	print "###############################################"
+	print band, i, 'of', len(x)
+	print "###############################################"
         try:
             obsIn = getObservation(obsid=id, useHsa=True, instrument='SPIRE')
             l2_image = obsIn.level2.getProduct('extd%s' % band).image
@@ -50,7 +51,12 @@ for band in bands:
             for t in thresholds:
                 threshold_results[t].append((d.where(d>t)).length())
         except:
-            pass
+            flux_totals.append(Double.NaN)
+            flux_medians.append(Double.NaN)
+            signal_99s.append(Double.NaN)
+
+            for t in thresholds:
+                threshold_results[t].append(Double.NaN)
         
     results = TableDataset(description='Observation Analysis')
     results['Observation ID'] = Column(x)
