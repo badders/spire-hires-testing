@@ -6,9 +6,9 @@ obsids = [1342189427, 1342188588, 1342185538, 1342249237]
 bands = ['PLW', 'PMW', 'PSW']
 
 beamSizes = {
-    'PLW' : [20, 50, 100, 125, 150],
-    'PMW' : [15, 35, 65, 100, 125],
-    'PSW' : [10, 25,  50, 70, 100],
+    'PLW' : [20, 50, 100, 125],
+    'PMW' : [15, 35, 65, 100],
+    'PSW' : [10, 25,  50, 70],
 }
 
 ########## DEBUG #############################
@@ -49,25 +49,32 @@ def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax, fluxOffse
         map(lambda x:keyMap.keys()[x/2]+str(x%2+1), range(2*len(keyMap.keys()))))
 
     hiresImage, hiresBeam = hiresMapper(level1, array = inArray, beam=inBeam, wcs=wcs, fluxOffset=fluxOffsets)
-    tempIndx = hiresImage.image.where((hiresImage.image>2*inMapMax).or(hiresImage.coverage<1e-10))
+    tempIndx = hiresImage.image.where((hiresImage.image>5*inMapMax).or(hiresImage.coverage<1e-10))
     hiresImage.image[tempIndx] = Double.NaN
     return hiresImage
-
 
 for obsid in obsids:
     obs = loadObservation(obsid)
     # Save out nominal maps
     for band in bands:
-        nominal = obs.level2.getProduct("psrc"+band)
-        beamAreaPipArc = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sArc'%band.capitalize()].value
-        nominalNew = convertImageUnit(image=nominal,beamArea= beamAreaPipArc,newUnit='MJy/sr')
-        simpleFitsWriter(nominalNew, outDir + '%d_NOMINAL_%s.fits' % (obsid, band))
+        nominal = obs.level2.getProduct("extd"+band)
+        simpleFitsWriter(nominal, outDir + '%d_NOMINAL_%s.fits' % (obsid, band))
 
     # Generate HiRes maps for each observation at all the beam sizes
     fullBeams = loadBeams(obs)
-
+ 
     for band in bands:
         level1 = obs.getLevel1()
+        chanRelGains = obs.calibration.getPhot().chanRelGain
+        level1RelGains=Level1Context()
+        for i in range(level1.getCount()):
+            psp = level1.getProduct(i)
+            if psp.type=="PPT": psp.setType("PSP") #for old Level 1 contexts
+            psp = applyRelativeGains(psp, chanRelGains)
+            level1RelGains.addProduct(psp)
+           
+        diag = obs.level2.getProduct('extd%sdiag'%band)
+        level1Corrected,mapZero,diagZero, p4,p5 = destriper(level1=level1RelGains, array=band, nThreads=2, withMedianCorrected=True, useSink=True, startParameters=diag)
 
         for beamSize in beamSizes[band]:
             bcenter = fullBeams[band].image.dimensions
@@ -77,17 +84,17 @@ for obsid in obsids:
             
             level2 = obs.level2
             wcs = level2.getProduct('extd%s'%band).wcs
-            mapMax = MAX(level2.getProduct('psrc%s'%band).image[\
-                level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
-            mapMin = MIN(level2.getProduct('psrc%s'%band).image[\
-                level2.getProduct('psrc%s'%band).image.where(IS_FINITE)])
+            mapMax = MAX(level2.getProduct('extd%s'%band).image[\
+                level2.getProduct('extd%s'%band).image.where(IS_FINITE)])
+            mapMin = MIN(level2.getProduct('extd%s'%band).image[\
+                level2.getProduct('extd%s'%band).image.where(IS_FINITE)])
             
             # Get flux offsets
             fluxOffsetsExtd = level2.getProduct('extd%s'%band).meta['zPointOffset'].value
             beamAreaPipSr = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sSr'%band.capitalize()].value
             fluxOffsetsPsrc = fluxOffsetsExtd * 1.e6 * beamAreaPipSr
             # Run hires with flux offsets
-            tempMap = processHiRes(level1, band, beam, wcs, mapMin, mapMax, fluxOffsetsPsrc)
+            tempMap = processHiRes(level1Corrected, band, beam, wcs, mapMin, mapMax, fluxOffsetsPsrc)
             # Remove flux offset 
             mapHiresPsrcNew = imageSubtract( image1=tempMap, scalar=fluxOffsetsPsrc)
             # Convert units to MJy/sr
