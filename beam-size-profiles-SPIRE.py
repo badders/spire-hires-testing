@@ -9,7 +9,7 @@ import aplpy
 fits_dir = "/Users/Tom/HIPE/plots/SPIRE/"
 
 # M74, NGC4151, M81
-obsid = 1342189427
+#obsid = 1342189427
 #obsid = 1342188588
 #obsid = 1342185538
 obsid = 1342249237
@@ -17,7 +17,7 @@ obsid = 1342249237
 band = 'PLW' #, 'PMW', 'PSW'
 
 beam_sizes = {
-    'PLW' : [0, 20, 50, 100, 125],
+    'PLW' : [20, 50, 100, 125],
     'PMW' : [0, 15, 35, 65, 100],
     'PSW' : [0, 10, 25,  50, 70],
 }
@@ -25,7 +25,7 @@ beam_sizes = {
 fig = figure()
 plots = {}
 
-styles = list(reversed(['-', '--', '-.', ':', '-']))
+styles = list(reversed(['-', '--', '-.', ':']))
 render = plot
 
 def update(_):
@@ -48,7 +48,9 @@ for i, b in enumerate(beam_sizes[band]):
     plots[b],  = render(data[h // 2], label=b, linewidth=1, linestyle=styles[i])
 
 xlim(h / 4, 3 * h / 4)
-ylim(0, data.max())
+ylim(0, 70)
+ylabel('Flux MJy/sr')
+xlabel('Pixel')
 legend(loc=1)
 
 sfreq = Slider(axes([0.18, 0.85, 0.5, 0.02]), 'Y', 0, h, valinit=h // 2, valfmt='%d')

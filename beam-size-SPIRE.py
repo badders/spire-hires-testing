@@ -1,8 +1,13 @@
+poolHsa = 'SPIRE_POOL'
+poolPath = '/Users/Tom/HIPE/pool'
+
 # Settings
 outDir = "/Users/Tom/HIPE/plots/SPIRE/"
 
 # M74, NGC4151, M81
-obsids = [1342189427, 1342188588, 1342185538, 1342249237]
+#obsids = [1342189427]
+obsids = [1342188588, 1342185538]
+#obsids = [1342249237]
 bands = ['PLW', 'PMW', 'PSW']
 
 beamSizes = {
@@ -11,6 +16,7 @@ beamSizes = {
     'PSW' : [10, 25,  50, 70],
 }
 
+ 
 ########## DEBUG #############################
 #obsids = [1342249237]
 #bands = ['PLW']
@@ -23,10 +29,17 @@ beamSizes = {
 
 # Get the observation from the archive if not already stored in the pool locally
 def loadObservation(obsid):
-    print 'Downloading from HSA ...'
-    obs = getObservation(obsid=obsid, useHsa=True, instrument='SPIRE')
-    obs.refs.remove('level0')
-    obs.refs.remove('level0_5')
+    try:
+        print 'Trying to get observation from pool ...'
+        obs = getObservation(obsid=obsid, poolName=poolHsa, instrument='SPIRE', poolLocation=poolPath)
+        obs.refs.remove('level0')
+        obs.refs.remove('level0_5')
+    except:
+        print 'Failed to get observation from pool, downloading from HSA ...'
+        obs = getObservation(obsid=obsid, useHsa=True, instrument='SPIRE')
+        obs.refs.remove('level0')
+        obs.refs.remove('level0_5')
+        spiaSaveObs(obs, Pool=poolHsa, nameTag=str(obsid), PoolPath=poolPath)
     return obs
 
 def loadBeams(obsIn):
@@ -37,8 +50,8 @@ def loadBeams(obsIn):
 
 def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax, fluxOffsets):
     level1 = Level1Context()
-    selectRefs = filter(lambda x:x.meta['bbid'].value>>16==0xa103, inLevel1.refs)
-    for ref in selectRefs: 
+    #selectRefs = filter(lambda x:x.meta['bbid'].value>>16==0xa103, inLevel1.refs)
+    for ref in inLevel1.refs: #selectRefs: 
         level1.addProduct(ref.getProduct().copy())
 
     wcs = inWcs.copy()
@@ -65,24 +78,33 @@ for obsid in obsids:
  
     for band in bands:
         level1 = obs.getLevel1()
+        level2 = obs.getLevel2()
+        
         chanRelGains = obs.calibration.getPhot().chanRelGain
-        level1RelGains=Level1Context()
+        level1RelGains = Level1Context()
+       
+        debugMap1 = naiveScanMapper(level1)
+       
         for i in range(level1.getCount()):
             psp = level1.getProduct(i)
             if psp.type=="PPT": psp.setType("PSP") #for old Level 1 contexts
             psp = applyRelativeGains(psp, chanRelGains)
             level1RelGains.addProduct(psp)
-           
-        diag = obs.level2.getProduct('extd%sdiag'%band)
-        level1Corrected,mapZero,diagZero, p4,p5 = destriper(level1=level1RelGains, array=band, nThreads=2, withMedianCorrected=True, useSink=True, startParameters=diag)
-
+        
+        debugMap2 = naiveScanMapper(level1RelGains)
+       
+        level1RelGains = level1
+        diag = level2.getProduct('extd%sdiag'%band)
+        level1Corrected,mapZero,diagZero, p4,p5 = destriper(level1=level1RelGains, array=band, withMedianCorrected=True, startParameters=diag)
+        
+        debugMap3 = naiveScanMapper(level1Corrected)
+        
         for beamSize in beamSizes[band]:
             bcenter = fullBeams[band].image.dimensions
             bcenter[0] = bcenter[0] / 2
             bcenter[1] = bcenter[1] / 2
             beam = crop(fullBeams[band], int(bcenter[0] - beamSize) , int(bcenter[1] - beamSize), int(bcenter[0] + beamSize+1), int(bcenter[1] + beamSize+1))
             
-            level2 = obs.level2
             wcs = level2.getProduct('extd%s'%band).wcs
             mapMax = MAX(level2.getProduct('extd%s'%band).image[\
                 level2.getProduct('extd%s'%band).image.where(IS_FINITE)])
@@ -96,12 +118,14 @@ for obsid in obsids:
             # Run hires with flux offsets
             tempMap = processHiRes(level1Corrected, band, beam, wcs, mapMin, mapMax, fluxOffsetsPsrc)
             # Remove flux offset 
+            debugHires1 = tempMap.copy()
             mapHiresPsrcNew = imageSubtract( image1=tempMap, scalar=fluxOffsetsPsrc)
             # Convert units to MJy/sr
             beamAreaPipArc = obs.calibration.getPhot().getProduct('ColorCorrBeam').meta['beamPipeline%sArc'%band.capitalize()].value
-            mapHiresExtdNew = convertImageUnit(image=mapHiresPsrcNew,beamArea= beamAreaPipArc,newUnit='MJy/sr')
+            mapHiresExtdNew = convertImageUnit(image=mapHiresPsrcNew,beamArea=beamAreaPipArc,newUnit='MJy/sr')
             k4P = obs.calibration.getPhot().getProduct('FluxConvList')[0].meta['k4P_%s'%band].value
             k4E = obs.calibration.getPhot().getProduct('FluxConvList')[0].meta['k4E_%s'%band].value
+            debugHires2 = mapHiresExtdNew.copy()
             mapHiresExtdNew = imageDivide(image1=mapHiresExtdNew,scalar=k4P)
             mapHiresExtdNew = imageMultiply(image1=mapHiresExtdNew,scalar=k4E)
             mapHiresExtdNew = imageAdd(image1=mapHiresExtdNew,scalar=fluxOffsetsExtd)

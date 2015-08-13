@@ -3,6 +3,8 @@ from pylab import *
 data = loadtxt('obs-lists/obs-stats.csv', delimiter=',', skiprows=1, unpack=True)
 types = loadtxt('obs-lists/obs-types.csv', delimiter=',', skiprows=1, unpack=True)
 
+psw_extra = loadtxt('/Users/Tom/HIPE/stats/results-PSW.csv', delimiter=',', skiprows=7, unpack=True)
+pmw_extra = loadtxt('/Users/Tom/HIPE/stats/results-PMW.csv', delimiter=',', skiprows=7, unpack=True)
 # Extra Galactic
 # GAL = 1
 # COS = 2
@@ -34,6 +36,14 @@ gal_filter = np.in1d(data[0], gal_ids)
 exgal_filter = np.in1d(data[0], exgal_ids)
 other_filter = np.in1d(data[0], other_ids)
 
+gal_filter_psw = np.in1d(psw_extra[0], gal_ids)
+exgal_filter_psw = np.in1d(psw_extra[0], exgal_ids)
+other_filter_psw = np.in1d(psw_extra[0], other_ids)
+
+gal_filter_pmw = np.in1d(pmw_extra[0], gal_ids)
+exgal_filter_pmw = np.in1d(pmw_extra[0], exgal_ids)
+other_filter_pmw = np.in1d(pmw_extra[0], other_ids)
+
 def run_filters():
     # > threshold buts less than 5 SNR:
     filt = logical_and(data[1] < 5, data[2] > 279)
@@ -53,7 +63,7 @@ def do_plots():
     loglog(data[1][other_filter], data[2][other_filter], '.', markersize=msize, label='Other')
 
     xlabel('99th Percentile Signal')
-    ylabel('Pixel Count > 20 MJ/sr')
+    ylabel('Pixel Count > 20 MJy/sr')
     title('PLW')
     xl = xlim()
     ylim(0,10**7)
@@ -67,7 +77,7 @@ def do_plots():
     loglog(data[4][other_filter], data[5][other_filter], '.', markersize=msize, label='Other')
 
     xlabel('99th Percentile Signal')
-    ylabel('Pixel Count > 20 MJ/sr')
+    ylabel('Pixel Count > 20 MJy/sr')
     title('PMW')
     xl = xlim()
     hlines(278.8, *xl, colors='r')
@@ -79,13 +89,42 @@ def do_plots():
     loglog(data[7][other_filter], data[8][other_filter], '.', markersize=msize, label='Other')
 
     xlabel('99th Percentile Signal')
-    ylabel('Pixel Count > 20 MJ/sr')
+    ylabel('Pixel Count > 20 MJy/sr')
     title('PSW')
     xl = xlim()
     hlines(544.4, *xl, colors='r')
     legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
 
     tight_layout()
+    savefig('doc/snr-thresholds.pdf')
+
+    ##### PMW Pixels > 30 MJy
+    figure()
+    loglog(pmw_extra[3][exgal_filter_pmw], pmw_extra[6][exgal_filter_pmw], '.', markersize=msize, label='ExGal')
+    loglog(pmw_extra[3][gal_filter_pmw], pmw_extra[6][gal_filter_pmw], '.', markersize=msize, label='Galactic')
+    loglog(pmw_extra[3][other_filter_pmw], pmw_extra[6][other_filter_pmw], '.', markersize=msize, label='Other')
+
+    xlabel('99th Percentile Signal')
+    ylabel('Pixel Count > 30 MJy/sr')
+    title('PMW')
+    xl = xlim()
+    hlines(278.8, *xl, colors='r')
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    savefig('doc/snr-thresholds-pmw30.pdf')
+
+    ##### PSW Pixels > 100 MJy
+    figure()
+    loglog(psw_extra[3][exgal_filter_psw], psw_extra[9][exgal_filter_psw], '.', markersize=msize, label='ExGal')
+    loglog(psw_extra[3][gal_filter_psw], psw_extra[9][gal_filter_psw], '.', markersize=msize, label='Galactic')
+    loglog(psw_extra[3][other_filter_psw], psw_extra[9][other_filter_psw], '.', markersize=msize, label='Other')
+
+    xlabel('99th Percentile Signal')
+    ylabel('Pixel Count > 100 MJy/sr')
+    title('PSW')
+    xl = xlim()
+    hlines(544.4, *xl, colors='r')
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    savefig('doc/snr-thresholds-psw100.pdf')
     show()
 
 if __name__ == '__main__':
