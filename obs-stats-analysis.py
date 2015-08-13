@@ -3,8 +3,8 @@ from pylab import *
 data = loadtxt('obs-lists/obs-stats.csv', delimiter=',', skiprows=1, unpack=True)
 types = loadtxt('obs-lists/obs-types.csv', delimiter=',', skiprows=1, unpack=True)
 
-psw_extra = loadtxt('/Users/Tom/HIPE/stats/results-PSW.csv', delimiter=',', skiprows=7, unpack=True)
-pmw_extra = loadtxt('/Users/Tom/HIPE/stats/results-PMW.csv', delimiter=',', skiprows=7, unpack=True)
+psw_extra = loadtxt('stats/results-PSW.csv', delimiter=',', skiprows=7, unpack=True)
+pmw_extra = loadtxt('stats/results-PMW.csv', delimiter=',', skiprows=7, unpack=True)
 # Extra Galactic
 # GAL = 1
 # COS = 2
@@ -22,6 +22,7 @@ pmw_extra = loadtxt('/Users/Tom/HIPE/stats/results-PMW.csv', delimiter=',', skip
 # Small = Type 1
 # Large = Type 2
 # Parallel = Type 3
+msize = 2
 
 exgal_test = logical_or(types[2] == 1, types[2] == 2)
 gal_test = logical_or(types[2] == 3, types[2] == 4, types[2] == 5)
@@ -30,7 +31,22 @@ other_test = logical_not(logical_or(exgal_test, gal_test))
 gal_ids = types[0][gal_test]
 exgal_ids = types[0][exgal_test]
 other_ids = types[0][other_test]
-msize = 2
+
+small_ids = types[0][types[1] == 1]
+large_ids = types[0][types[1] == 2]
+parallel_ids = types[0][types[1] == 3]
+
+small_filter = np.in1d(data[0], small_ids)
+large_filter = np.in1d(data[0], large_ids)
+parallel_filter = np.in1d(data[0], parallel_ids)
+
+small_filter_pmw = np.in1d(pmw_extra[0], small_ids)
+large_filter_pmw = np.in1d(pmw_extra[0], large_ids)
+parallel_filter_pmw = np.in1d(pmw_extra[0], parallel_ids)
+
+small_filter_psw = np.in1d(psw_extra[0], small_ids)
+large_filter_psw = np.in1d(psw_extra[0], large_ids)
+parallel_filter_psw = np.in1d(psw_extra[0], parallel_ids)
 
 gal_filter = np.in1d(data[0], gal_ids)
 exgal_filter = np.in1d(data[0], exgal_ids)
@@ -50,6 +66,7 @@ def run_filters():
     obs_ids = data[0][filt]
     savetxt('obs-lists/ids-abovethresh-lowsnr.csv', obs_ids, fmt='%d')
 
+    # < threshold but above 17 SNR
     filt = logical_and(data[1] > 17, data[2] < 100)
     obs_ids = data[0][filt]
     savetxt('obs-lists/ids-belowthresh-highsnr.csv', obs_ids, fmt='%d')
@@ -68,7 +85,7 @@ def do_plots():
     xl = xlim()
     ylim(0,10**7)
     hlines(100, *xl, colors='r')
-    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
 
     subplot(132)
 
@@ -81,7 +98,7 @@ def do_plots():
     title('PMW')
     xl = xlim()
     hlines(278.8, *xl, colors='r')
-    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
 
     subplot(133)
     loglog(data[7][exgal_filter], data[8][exgal_filter], '.', markersize=msize, label='ExGal')
@@ -93,7 +110,7 @@ def do_plots():
     title('PSW')
     xl = xlim()
     hlines(544.4, *xl, colors='r')
-    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
 
     tight_layout()
     savefig('doc/snr-thresholds.pdf')
@@ -109,7 +126,7 @@ def do_plots():
     title('PMW')
     xl = xlim()
     hlines(278.8, *xl, colors='r')
-    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
     savefig('doc/snr-thresholds-pmw30.pdf')
 
     ##### PSW Pixels > 100 MJy
@@ -123,8 +140,51 @@ def do_plots():
     title('PSW')
     xl = xlim()
     hlines(544.4, *xl, colors='r')
-    legend(loc=2, numpoints=1, fontsize=10, markerscale=4)
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
     savefig('doc/snr-thresholds-psw100.pdf')
+
+    # Plot same but for different split
+    figure(figsize=(16,7))
+    subplot(131)
+
+    loglog(data[1][large_filter], data[2][large_filter], '.', markersize=msize, label='Large')
+    loglog(data[1][small_filter], data[2][small_filter], '.', markersize=msize, label='Small')
+    loglog(data[1][parallel_filter], data[2][parallel_filter], '.', markersize=msize, label='Parallel')
+
+    xlabel('99th Percentile Signal')
+    ylabel('Pixel Count > 20 MJy/sr')
+    title('PLW')
+
+    xl = xlim()
+    ylim(0,10**7)
+    hlines(100, *xl, colors='r')
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
+
+    subplot(132)
+    loglog(pmw_extra[3][large_filter_pmw], pmw_extra[6][large_filter_pmw], '.', markersize=msize, label='Large')
+    loglog(pmw_extra[3][small_filter_pmw], pmw_extra[6][small_filter_pmw], '.', markersize=msize, label='Small')
+    loglog(pmw_extra[3][parallel_filter_pmw], pmw_extra[6][parallel_filter_pmw], '.', markersize=msize, label='Parallel')
+
+    xlabel('99th Percentile Signal')
+    ylabel('Pixel Count > 30 MJy/sr')
+    title('PMW')
+    ylim(0,10**7)
+    xl = xlim()
+    hlines(278.8, *xl, colors='r')
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
+
+    subplot(133)
+    loglog(psw_extra[3][large_filter_psw], psw_extra[9][large_filter_psw], '.', markersize=msize, label='Large')
+    loglog(psw_extra[3][small_filter_psw], psw_extra[9][small_filter_psw], '.', markersize=msize, label='Small')
+    loglog(psw_extra[3][parallel_filter_psw], psw_extra[9][parallel_filter_psw], '.', markersize=msize, label='Parallel')
+
+    xlabel('99th Percentile Signal')
+    ylabel('Pixel Count > 100 MJy/sr')
+    title('PSW')
+    xl = xlim()
+    hlines(544.4, *xl, colors='r')
+    legend(loc=2, numpoints=1, fontsize=10, markerscale=msize*2)
+    savefig('doc/snr-thresholds-byobstype.pdf')
     show()
 
 if __name__ == '__main__':
