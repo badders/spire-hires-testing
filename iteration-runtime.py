@@ -22,9 +22,10 @@ map(lambda x: wcs.meta[x].setValue(keyMap[x[:-1]][0](wcs.meta[x].value*keyMap[x[
     map(lambda x:keyMap.keys()[x/2]+str(x%2+1), range(2*len(keyMap.keys()))))
   
 times = []
+l1 = obs.level1.copy()
 for iter in iters:
     t1 = datetime.datetime.now()
-    map, _ = hiresMapper(obs.level1, maxIter=iter+1, beam=beam, wcs=wcs)
+    map, _ = hiresMapper(l1, maxIter=iter+1, beam=beam, wcs=wcs)
     t2 = datetime.datetime.now()
     times.append( (t2-t1).seconds )
     
