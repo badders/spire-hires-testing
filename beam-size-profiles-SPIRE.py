@@ -16,7 +16,7 @@ obsid = 1342249237
 
 band = 'PLW' #, 'PMW', 'PSW'
 
-beamSizes = {
+beam_sizes = {
     'PLW' : [20, 50, 80, 100, 150],
     'PMW' : [15, 35, 60, 80, 100],
     'PSW' : [10, 25, 40, 60, 80],
@@ -25,7 +25,7 @@ beamSizes = {
 fig = figure()
 plots = {}
 
-styles = list(reversed(['-', '--', '-.', ':']))
+styles = list(reversed(['-', '--', '-.', ':', '-.']))
 render = plot
 
 def update(_):
