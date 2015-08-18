@@ -17,5 +17,6 @@ for obsid in obsids:
         nominal = simpleFitsReader(outDir + '%d_NOMINAL_%s.fits' % (obsid, band))
         hires = simpleFitsReader(outDir + str(obsid) + '_HIRES_' + band +'_BEAMHSIZE_' + str(beamSize) + '.fits')
         rnom = regrid(source=nominal, target=hires)
+        rnom = imageMultiply(rnom, 4)
         simpleFitsWriter(rnom, outDir + '%d_NOMINAL_REGRID_%s.fits' % (obsid, band))
 

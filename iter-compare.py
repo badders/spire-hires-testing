@@ -19,6 +19,9 @@ styles = list(reversed(['-', '--', '-.', ':']))
 render = plot
 
 def update(_):
+    hdulist = fits.open('/Users/Tom/HIPE/plots/spire/1342249237_NOMINAL_REGRID_PLW.fits')
+    data = nan_to_num(hdulist[1].data)
+    plots[0].set_ydata((data[int(sfreq.val)])[:len(plots[0].get_ydata())] )
     for n in files:
         hdulist = fits.open(files[n])
         data = nan_to_num(hdulist[1].data)
@@ -29,14 +32,19 @@ for fname in glob.glob(fits_dir + band + '*.fits'):
     n = int(re.findall('\d+', fname)[0])
     files_orig[n] = fname
 
-plot_iters = [5, 10, 15, 20]
+plot_iters = [5, 10, 15, 20, 30]
 files = {k: v for k, v in files_orig.items() if k in plot_iters}
+
+hdulist = fits.open('/Users/Tom/HIPE/plots/spire/1342249237_NOMINAL_REGRID_PLW.fits')
+data = nan_to_num(hdulist[1].data)
+h = data.shape[1]
+plots[0], = render(data[h // 2], label='Nominal', linewidth=1, color='k')
 
 for i, n in enumerate(sort([k for k, v in files.items()])):
     hdulist = fits.open(files[n])
     data = nan_to_num(hdulist[1].data)
     h = data.shape[1]
-    plots[n],  = render(data[h // 2], label=n, linewidth=1, linestyle=styles[i % len(styles)])
+    plots[n], = render(data[h // 2], label=n, linewidth=1, linestyle=styles[i % len(styles)])
 
 xlim(h / 4, 3 * h / 4)
 ylim(0, 150)
@@ -50,7 +58,7 @@ sfreq.on_changed(update)
 figure()
 n = sort([k for k, v in files_orig.items()])
 
-hdulist = fits.open(files_orig[n[0]])
+hdulist = fits.open('/Users/Tom/HIPE/plots/spire/1342249237_NOMINAL_REGRID_PLW.fits')
 max_image = nan_to_num(hdulist[1].data)
 h,w = max_image.shape
 #max_image = max_image[w//4:h//4,3*w//4:3*h//4 ]
@@ -62,19 +70,11 @@ for i in n:
     data = nan_to_num(hdulist[1].data)
     diffs[i-1] = sqrt(((max_image - data)**2).mean())
 
-ylabel('RMS Pixel Difference from 1 Iteration')
+ylabel('RMS Pixel Difference from nominal')
 xlabel('Number of Iterations')
 
 plot(n, diffs)
-plot(n, diffs, 'kx')
+plot(n, diffs, 'kx', markersize=8)
 savefig('doc/iter-rms.pdf')
-
-# Plot Thumbs
-figure()
-k, fs = files.items()
-
-for i, k in enumerate(k):
-    subplot(4,1,i+1)
-    
 
 show()
