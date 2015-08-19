@@ -66,18 +66,21 @@ def run_filters():
     obs_ids_fail = data[0][logical_not(filt)]
     print('PLW: %d pass test' % len(obs_ids_pass))
     print('PLW: %d fail test' % len(obs_ids_fail))
+    savetxt('obs-to-hires/plw-pass.csv', obs_ids_pass, fmt='%d')
 
-    filt = logical_and(pmw_extra[6] > 287, pmw_extra[3] > 15)
+    filt = logical_and(pmw_extra[7] > 278, pmw_extra[3] > 15)
     obs_ids_pass = pmw_extra[0][filt]
     obs_ids_fail = pmw_extra[0][logical_not(filt)]
     print('PMW: %d pass test' % len(obs_ids_pass))
     print('PMW: %d fail test' % len(obs_ids_fail))
+    savetxt('obs-to-hires/pmw-pass.csv', obs_ids_pass, fmt='%d')
 
     filt = logical_and(psw_extra[9] > 544, psw_extra[3] > 30)
     obs_ids_pass = psw_extra[0][filt]
     obs_ids_fail = psw_extra[0][logical_not(filt)]
     print('PSW: %d pass test' % len(obs_ids_pass))
     print('PSW: %d fail test' % len(obs_ids_fail))
+    savetxt('obs-to-hires/psw-pass.csv', obs_ids_pass, fmt='%d')
 
     print('Halving the area')
     filt = logical_and(data[2] > 50, data[1] > 10)
