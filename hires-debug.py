@@ -30,19 +30,19 @@ chanRelGains = obs.calibration.getPhot().chanRelGain
 DEBUG_pre_relgains = naiveScanMapper(level1)
 
 level1RelGains = Level1Context()
-    
+level1RelGains.meta = level1.meta
+
 for i in range(level1.getCount()):
     psp = level1.getProduct(i)
     if psp.type=="PPT": psp.setType("PSP") #for old Level 1 contexts
     psp = applyRelativeGains(psp, chanRelGains)
     level1RelGains.addProduct(psp)
 
-
 #level1RelGains = level1
 # Apply destriper
-diag = level2.getProduct('extd%sdiag'%band)
+#diag = level2.getProduct('extd%sdiag'%band)
+diag = level2.getProduct('psrc%sdiag'%band)
 DEBUG_pre_destriper = naiveScanMapper(level1RelGains)
-akjahsdkhjas
 level1Corrected,mapZero,diagZero, p4,p5 = destriper(level1=level1RelGains, array=band, withMedianCorrected=True, startParameters=diag)
 
 # Generate beam for hires
