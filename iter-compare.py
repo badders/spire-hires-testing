@@ -32,7 +32,7 @@ for fname in glob.glob(fits_dir + band + '*.fits'):
     n = int(re.findall('\d+', fname)[0])
     files_orig[n] = fname
 
-plot_iters = [5, 10, 15, 20, 30]
+plot_iters = [5, 10, 15, 20, 30, 50]
 files = {k: v for k, v in files_orig.items() if k in plot_iters}
 
 hdulist = fits.open('/Users/Tom/HIPE/plots/spire/1342249237_NOMINAL_REGRID_PLW.fits')
