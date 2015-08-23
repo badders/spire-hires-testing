@@ -1,14 +1,13 @@
 # Settings
 outDir = "/Users/Tom/HIPE/plots/SPIRE/"
 
-# M74, NGC4151, M81
-obsids = [1342189427, 1342188588, 1342185538, 1342249237]
-bands = ['PLW', 'PMW', 'PSW']
+obsids = [1342249237, 1342227726, 1342210936, 1342216940]
+bands = ['PLW'] #, 'PMW', 'PSW']
 
 beamSizes = {
-    'PLW' : [20, 50, 100, 125, 150],
-    'PMW' : [15, 35, 65, 100, 125],
-    'PSW' : [10, 25,  50, 70, 100],
+    'PLW' : [20],
+    'PMW' : [15],
+    'PSW' : [10],
 }
 
 for obsid in obsids:

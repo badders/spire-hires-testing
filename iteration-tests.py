@@ -3,7 +3,7 @@ poolPath = '/Users/Tom/HIPE/pool'
 
 # Settings
 outDir = "/Users/Tom/HIPE/plots/iter_test/"
-obsid = 1342249237
+obsid = 1342216940
 band = 'PLW'
 beamSize = 100
 
@@ -42,7 +42,7 @@ def processHiRes(inLevel1, inArray, inBeam, inWcs, inMapMin, inMapMax, fluxOffse
     map(lambda x: wcs.meta[x].setValue(keyMap[x[:-1]][0](wcs.meta[x].value*keyMap[x[:-1]][1])) , \
         map(lambda x:keyMap.keys()[x/2]+str(x%2+1), range(2*len(keyMap.keys()))))
 
-    hiresImageList, _ = hiresMapper(level1, storeIter=range(51), maxIter=50, array = inArray, beam=inBeam, wcs=wcs, fluxOffset=fluxOffsets)
+    hiresImageList, _ = hiresMapper(level1, storeIter=range(81), maxIter=80, array = inArray, beam=inBeam, wcs=wcs, fluxOffset=fluxOffsets)
 
     for key in hiresImageList:
         hiresImage = hiresImageList[key]
@@ -94,4 +94,4 @@ for key in tempMapList:
 
 for iters in hiresMapList:
     map = hiresMapList[iters]
-    simpleFitsWriter(map, outDir + band + '_' + str(iters) + '.fits')
+    simpleFitsWriter(map, outDir + str(obsid) + '_' + band + '_' + str(iters) + '.fits')

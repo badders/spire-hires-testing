@@ -5,17 +5,18 @@ from scipy.ndimage.filters import convolve
 from matplotlib.widgets import Slider, RadioButtons
 import aplpy
 
-# Settings
+######### Settings ###################
+
+# Directory to find files
 fits_dir = "/Users/Tom/HIPE/plots/SPIRE/"
 
-# M74, NGC4151, M81
-#obsid = 1342189427
-#obsid = 1342188588
-#obsid = 1342185538
-obsid = 1342249237
+# Observation id to use
+obsid = 1342216940
 
+# Band to plot
 band = 'PLW' #, 'PMW', 'PSW'
 
+# Beam sizes to plot (this should be the same as in beam-size-SPIRE.py, 0 uses nominal map)
 beam_sizes = {
     'PLW' : [0, 20, 50, 80, 100, 150],
     'PMW' : [0, 15, 35, 60, 80, 100],
@@ -36,6 +37,7 @@ def update(_):
             hdulist = fits.open(fits_dir + '{}_HIRES_{}_BEAMHSIZE_{}.fits'.format(obsid, band, b))
         data = nan_to_num(hdulist[1].data)
         plots[b].set_ydata( (data[int(sfreq.val)])[:len(plots[b].get_ydata())] )
+    draw_idle()
 
 for i, b in enumerate(beam_sizes[band]):
     if b == 0:
@@ -50,12 +52,12 @@ for i, b in enumerate(beam_sizes[band]):
         plots[b],  = render(data[h // 2], label=b, linewidth=1, linestyle=styles[i % len(styles)])
 
 xlim(h / 4, 3 * h / 4)
-ylim(0, 70)
+ylim(0, 150)
 ylabel('Flux MJy/sr')
-xlabel('Pixel')
+xlabel('X Pixel Coordinate')
 legend(loc=1)
 
-sfreq = Slider(axes([0.18, 0.85, 0.5, 0.02]), 'Y', 0, h, valinit=h // 2, valfmt='%d')
+sfreq = Slider(axes([0.25, 0.85, 0.45, 0.02]), 'Y Pixel Coordinate', 0, h, valinit=h // 2, valfmt='%d')
 sfreq.on_changed(update)
 
 show()
