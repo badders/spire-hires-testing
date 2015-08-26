@@ -19,9 +19,14 @@ spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/m81.fits'
 # Witch Head nebula
 obsid = 1342249237
 spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/witch_head.fits'
+
+# IRDC 310
+obsid = 1342189513
+spitzer24Src = '/Users/Tom/Projects/spire-hires-testing/spitzer-fits/irdc310.fits'
+
 bands = ['PLW'] #, 'PMW', 'PSW']
 
-N_ITERS = 50
+N_ITERS = 100
 # Get the observation from the archive if not already stored in the pool locally
 def loadObservation(obsid):
     try:
@@ -34,7 +39,7 @@ def loadObservation(obsid):
         obsIn = getObservation(obsid=obsid, useHsa=True, instrument='SPIRE')
         obsIn.refs.remove('level0')
         obsIn.refs.remove('level0_5')
-        spiaSaveObs(obsIn, Pool=poolHsa, nameTag=str(obsid), PoolPath=poolPath)
+        #spiaSaveObs(obsIn, Pool=poolHsa, nameTag=str(obsid), PoolPath=poolPath)
     return obsIn
 
 # Load in the spitzer image
@@ -201,6 +206,7 @@ for band in bands:
     tempMaps = processHiRes(newScans[band], band, beam, wcs, mapMin, mapMax)   
     for i in range(1, len(tempMaps)+1):
         simpleFitsWriter(tempMaps[i], outDir + str(obsid) + '_HIRES_' + band +'_' + str(i) + '.fits')
+
 
 # Save out Truth images
 for band in bands:

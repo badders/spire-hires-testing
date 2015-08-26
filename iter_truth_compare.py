@@ -1,24 +1,39 @@
 from common import *
 
 fitsDir = '/Users/Tom/HIPE/plots/iter_truth/'
+
+# M81
 obsid = 1342185538
 band = 'PLW'
+r = 70
+cx, cy = 283, 283
+max_iter = 80
+
+# Witch Head nebula
+obsid =  1342249237
+band = 'PLW'
+r = 60
+cx, cy = 163, 264
+max_iter = 50
 
 truth_data = fits.open(fitsDir + str(obsid) + '_TRUTH_' + band + '.fits')[1].data
 
 mask = zeros_like(truth_data)
 w, h = truth_data.shape
-cx, cy = w // 2, h // 2
-r = 70
 
 for i in range(w):
     for j in range(h):
-        if (i - cx)**2 + (j-cy)**2 < r**2:
+        if (i - cy)**2 + (j-cx)**2 < r**2:
             mask[i][j] = 1
 
-iters = range(0, 81)
+iters = range(0, max_iter+1)
 diffs = []
 truth_data = nan_to_num(truth_data) * mask
+
+# imshow(mask)
+# figure()
+# imshow(truth_data)
+# figure()
 
 for i in iters:
     if i == 0:

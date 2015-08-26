@@ -40,16 +40,45 @@ import glob
 # tight_layout()
 # savefig('doc/iter-thumbs-zoom.pdf')
 
-files = glob.glob('/Users/Tom/HIPE/plots/obs_thumbs/nearby/*PLW.fits')
-fmain = figure(figsize=(10,8))
-for i, f in enumerate(files):
-    fig = aplpy.FITSFigure(f, figure=fmain, subplot=(3,3,i+1))
+# files = glob.glob('/Users/Tom/HIPE/plots/obs_thumbs/nearby/*PLW.fits')
+# fmain = figure(figsize=(10,8))
+# for i, f in enumerate(files):
+#     fig = aplpy.FITSFigure(f, figure=fmain, subplot=(3,3,i+1))
+#     fig.show_colorscale(cmap='gist_heat')
+#     fig.axis_labels.hide()
+#     fig.tick_labels.hide()
+#     fig.add_colorbar()
+#
+# tight_layout()
+# savefig('doc/nearby-thumbs.pdf')
+
+base_dir = '/Users/Tom/HIPE/plots/radial-beams/'
+obsids = [1342249237, 1342227726, 1342210936, 1342216940]
+band = 'PLW'
+
+fmain = figure()
+for i, obsid in enumerate(obsids):
+    hires = base_dir + str(obsid) +'_HIRES_' + band + '.fits'
+    radial= base_dir + str(obsid) +'_HIRES_RAIDAL_' + band + '.fits'
+    diff = base_dir + str(obsid) +'_DIFF_' + band + '.fits'
+
+    fig = aplpy.FITSFigure(hires, figure=fmain, subplot=(4,3,i*3 + 1))
     fig.show_colorscale(cmap='gist_heat')
     fig.axis_labels.hide()
     fig.tick_labels.hide()
     fig.add_colorbar()
 
-tight_layout()
-savefig('doc/nearby-thumbs.pdf')
+    fig = aplpy.FITSFigure(radial, figure=fmain, subplot=(4,3,i*3 + 2))
+    fig.show_colorscale(cmap='gist_heat')
+    fig.axis_labels.hide()
+    fig.tick_labels.hide()
+    fig.add_colorbar()
 
+    fig = aplpy.FITSFigure(diff, figure=fmain, subplot=(4,3,i*3 + 3))
+    fig.show_colorscale(cmap='gist_heat')
+    fig.axis_labels.hide()
+    fig.tick_labels.hide()
+    fig.add_colorbar()
+    
+tight_layout()
 show()
