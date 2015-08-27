@@ -16,6 +16,13 @@ r = 60
 cx, cy = 163, 264
 max_iter = 50
 
+# IRDC 310
+obsid =  1342189513
+band = 'PLW'
+r = 60
+cx, cy = 163, 264
+max_iter = 100
+
 truth_data = fits.open(fitsDir + str(obsid) + '_TRUTH_' + band + '.fits')[1].data
 
 mask = zeros_like(truth_data)

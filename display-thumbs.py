@@ -52,33 +52,56 @@ import glob
 # tight_layout()
 # savefig('doc/nearby-thumbs.pdf')
 
-base_dir = '/Users/Tom/HIPE/plots/radial-beams/'
-obsids = [1342249237, 1342227726, 1342210936, 1342216940]
+# base_dir = '/Users/Tom/HIPE/plots/radial-beams/'
+# obsids = [1342249237, 1342227726, 1342210936, 1342216940]
+# band = 'PLW'
+#
+# fmain = figure()
+# for i, obsid in enumerate(obsids):
+#     hires = base_dir + str(obsid) +'_HIRES_' + band + '.fits'
+#     radial= base_dir + str(obsid) +'_HIRES_RAIDAL_' + band + '.fits'
+#     diff = base_dir + str(obsid) +'_DIFF_' + band + '.fits'
+#
+#     fig = aplpy.FITSFigure(hires, figure=fmain, subplot=(4,3,i*3 + 1))
+#     fig.show_colorscale(cmap='gist_heat')
+#     fig.axis_labels.hide()
+#     fig.tick_labels.hide()
+#     fig.add_colorbar()
+#
+#     fig = aplpy.FITSFigure(radial, figure=fmain, subplot=(4,3,i*3 + 2))
+#     fig.show_colorscale(cmap='gist_heat')
+#     fig.axis_labels.hide()
+#     fig.tick_labels.hide()
+#     fig.add_colorbar()
+#
+#     fig = aplpy.FITSFigure(diff, figure=fmain, subplot=(4,3,i*3 + 3))
+#     fig.show_colorscale(cmap='gist_heat')
+#     fig.axis_labels.hide()
+#     fig.tick_labels.hide()
+#     fig.add_colorbar()
+
+base_dir = '/Users/Tom/HIPE/plots/rotations/'
+obsid = 1342249237
+angles = [30, 60, 90, 120, 150, 180]
 band = 'PLW'
 
 fmain = figure()
-for i, obsid in enumerate(obsids):
-    hires = base_dir + str(obsid) +'_HIRES_' + band + '.fits'
-    radial= base_dir + str(obsid) +'_HIRES_RAIDAL_' + band + '.fits'
-    diff = base_dir + str(obsid) +'_DIFF_' + band + '.fits'
+for i, angle in enumerate(angles):
+    hires = base_dir + str(obsid) +'_HIRES_ROT_' + str(angle) +  '_' + band + '.fits'
+    diff = base_dir + str(obsid) +'_HIRES_DIFF0_ROT_' + str(angle) +  '_' + band + '.fits'
 
-    fig = aplpy.FITSFigure(hires, figure=fmain, subplot=(4,3,i*3 + 1))
+    fig = aplpy.FITSFigure(hires, figure=fmain, subplot=(3,4, i*2 + 1))
+    fig.show_colorscale(cmap='gist_heat')
+    fig.axis_labels.hide()
+    fig.tick_labels.hide()
+    fig.add_colorbar()
+    title('Rotated %d°' % angle)
+
+    fig = aplpy.FITSFigure(diff, figure=fmain, subplot=(3,4, i*2 + 2))
     fig.show_colorscale(cmap='gist_heat')
     fig.axis_labels.hide()
     fig.tick_labels.hide()
     fig.add_colorbar()
 
-    fig = aplpy.FITSFigure(radial, figure=fmain, subplot=(4,3,i*3 + 2))
-    fig.show_colorscale(cmap='gist_heat')
-    fig.axis_labels.hide()
-    fig.tick_labels.hide()
-    fig.add_colorbar()
-
-    fig = aplpy.FITSFigure(diff, figure=fmain, subplot=(4,3,i*3 + 3))
-    fig.show_colorscale(cmap='gist_heat')
-    fig.axis_labels.hide()
-    fig.tick_labels.hide()
-    fig.add_colorbar()
-    
 tight_layout()
 show()
