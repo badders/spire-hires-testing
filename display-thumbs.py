@@ -77,7 +77,7 @@ for i, obsid in enumerate(obsids):
     fig.tick_labels.hide()
     fig.add_colorbar()
 
-    fig = aplpy.FITSFigure(fabs(diff_data) / hires_data, figure=fmain, subplot=(4,3,i*3 + 3))
+    fig = aplpy.FITSFigure(diff_data / hires_data, figure=fmain, subplot=(4,3,i*3 + 3))
     fig.show_colorscale(cmap='gist_heat')
     fig.axis_labels.hide()
     fig.tick_labels.hide()
@@ -90,14 +90,14 @@ for i, obsid in enumerate(obsids):
 #
 # fmain = figure()
 # zero_data = fits.open(base_dir + str(obsid) +'_HIRES_ROT_0_' + band + '.fits')[1].data
-#
+
 # for i, angle in enumerate(angles):
 #     hires = base_dir + str(obsid) +'_HIRES_ROT_' + str(angle) +  '_' + band + '.fits'
 #     diff = base_dir + str(obsid) +'_HIRES_DIFF0_ROT_' + str(angle) +  '_' + band + '.fits'
 #     hires_data = fits.open(hires)[1].data
 #     diff_data = fits.open(diff)[1].data
 #
-#     diff_data = fabs(diff_data) / zero_data
+#     diff_data = diff_data / zero_data
 #
 #     fig = aplpy.FITSFigure(hires_data, figure=fmain, subplot=(3,4, i*2 + 1))
 #     fig.show_colorscale(cmap='gist_heat')
@@ -107,7 +107,7 @@ for i, obsid in enumerate(obsids):
 #     title('Rotated %d°' % angle)
 #
 #     fig = aplpy.FITSFigure(diff_data, figure=fmain, subplot=(3,4, i*2 + 2))
-#     fig.show_colorscale(cmap='gist_heat', vmin=0, vmax=0.6)
+#     fig.show_colorscale(cmap='gist_heat', vmin=-0.3, vmax=0.3)
 #     fig.axis_labels.hide()
 #     fig.tick_labels.hide()
 #     fig.add_colorbar()
